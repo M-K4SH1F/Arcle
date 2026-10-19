@@ -151,14 +151,6 @@ Each row looks like this:
 // english, romaji, short names, year, season, format, source, studios, genres, episodes, popularity (thousands)
 ```
 
-## Deploying with GitHub Pages
-
-1. Upload all files to a **public** repository.
-2. Go to **Settings → Pages**, set **Source** to **Deploy from a branch**, then pick `main` and `/ (root)`.
-3. The game goes live at `https://YOUR-USERNAME.github.io/arcle/` within a couple of minutes.
-
-To use your own domain, enter it under **Settings → Pages → Custom domain** and follow [GitHub's custom domain guide](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site). Keep the `CNAME` file in the repo when you upload updates.
-
 ## Plans
 
 - Freeze past puzzles so updating the anime list doesn't change days that already happened
