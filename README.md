@@ -4,7 +4,7 @@
 
 **A daily guessing game for anime fans.** Every day there are 5 hidden anime to find. Each one comes with a few clues. You get one guess and 30 seconds per prompt, and the closer your guess is, the more points you get.
 
-**Play:** `https://YOUR-USERNAME.github.io/arcle/` *(replace with your live link)*
+**Play:** `https://m-k4sh1f.github.io/arcle/`
 
 ---
 
