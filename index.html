@@ -1,0 +1,1233 @@
+<title>Arcle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column, like a phone game screen. Tier colors are the only accents. Dark first, light on toggle. */
+:root {
+  --bg: #111118; --surface: #1a1a24; --surface-2: #242432; --line: #30303f;
+  --fg: #eeedf6; --muted: #9b9ab2; --on-solid: #111118;
+  --t-common: #b4b6c2; --t-rare: #4f8cff; --t-epic: #a66bff; --t-leg: #f2c14e; --t-miss: #3a3a4a;
+  --danger: #ff7070; --ok: #5ad19a;
+  --f-display: "Dela Gothic One", "Arial Black", Impact, sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #f5f4fa; --surface: #ffffff; --surface-2: #ecebf4; --line: #dcdae8;
+  --fg: #17161f; --muted: #5f5e78; --on-solid: #ffffff;
+  --t-common: #8e919d; --t-rare: #2e6de6; --t-epic: #8a4cf0; --t-leg: #cf960c; --t-miss: #bcbbca;
+  --danger: #d13434; --ok: #1f9d63;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: var(--f-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--t-rare); outline-offset: 2px; }
+.app { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 24px; display: flex; flex-direction: column; min-height: 100%; }
+
+/* Top bar */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-block: 14px; border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wordmark { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; }
+.wordmark b { font-family: var(--f-display); font-weight: 400; font-size: 26px; letter-spacing: 0.02em; line-height: 1; }
+.mark { display: grid; grid-template-columns: repeat(2, 9px); gap: 2px; }
+.mark i { width: 9px; height: 9px; border-radius: 2px; display: block; }
+.nav { display: flex; gap: 4px; }
+.icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; background: none; border: 1px solid transparent; color: var(--muted); }
+.icon-btn:hover { color: var(--fg); background: var(--surface); }
+.icon-btn[aria-current="page"] { color: var(--fg); border-color: var(--line); background: var(--surface); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+main { flex: 1; padding-top: 20px; display: flex; flex-direction: column; gap: 20px; }
+section { display: flex; flex-direction: column; gap: 18px; }
+
+.test-banner { font-family: var(--f-mono); font-size: 12px; color: var(--t-leg); border: 1px dashed var(--t-leg); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.test-banner button { background: none; border: 0; color: inherit; text-decoration: underline; font-size: 12px; padding: 0; }
+
+/* Tiles */
+.tiles { display: flex; gap: 6px; }
+.tile { width: 40px; height: 40px; border-radius: 7px; display: grid; place-items: center; font-family: var(--f-mono); font-weight: 700; font-size: 18px; color: var(--on-solid); flex: none; }
+.tile.sm { width: 22px; height: 22px; border-radius: 5px; font-size: 11px; }
+.tile.empty { background: transparent; border: 2px dashed var(--line); }
+.tile.now { border-color: var(--fg); }
+.tc-common, .tc-cold { background: var(--t-common); }
+.tc-warm { background: var(--t-rare); }
+.tc-close { background: var(--t-epic); }
+.tc-bullseye { background: var(--t-leg); }
+.txt-cold { color: var(--t-common); } .txt-warm { color: var(--t-rare); } .txt-close { color: var(--t-epic); } .txt-bullseye { color: var(--t-leg); }
+.clues { display: flex; flex-wrap: wrap; gap: 8px; }
+.clue { font-size: 18px; font-weight: 700; padding: 6px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); }
+.reveal { margin: 0; font-size: 16px; }
+.cmp-wrap { overflow-x: auto; }
+.cmp { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cmp th, .cmp td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.cmp thead th { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.cmp td:first-child { color: var(--muted); }
+.cmp td:last-child { text-align: right; white-space: nowrap; }
+.cmp tr.full td:last-child { color: var(--ok); }
+.cmp tr.none td:last-child { color: var(--danger); }
+.cmp .hint { color: var(--muted); font-family: var(--f-mono); font-size: 12px; white-space: nowrap; }
+.tc-rare { background: var(--t-rare); }
+.tc-epic { background: var(--t-epic); }
+.tc-legendary { background: var(--t-leg); }
+.tc-miss { background: var(--t-miss); }
+.txt-common { color: var(--t-common); } .txt-rare { color: var(--t-rare); } .txt-epic { color: var(--t-epic); } .txt-legendary { color: var(--t-leg); } .txt-miss { color: var(--muted); }
+
+/* Home */
+.hero { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.big-num { font-family: var(--f-display); font-size: 64px; line-height: 1; letter-spacing: 0.01em; }
+.big-num span { color: var(--muted); }
+.lede { color: var(--muted); max-width: 46ch; margin: 0; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode { text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.mode strong { font-size: 17px; }
+.mode small { color: var(--muted); font-size: 13px; line-height: 1.35; }
+.mode[aria-pressed="true"] { border-color: var(--fg); background: var(--surface-2); }
+.mode:disabled { cursor: default; opacity: 0.45; }
+.mode[aria-pressed="true"]:disabled { opacity: 1; }
+.btn { border: 0; border-radius: var(--r); padding: 14px 18px; font-weight: 700; font-size: 17px; background: var(--fg); color: var(--bg); display: inline-flex; justify-content: center; align-items: center; gap: 8px; }
+.btn:hover { filter: brightness(0.92); }
+.btn.ghost { background: var(--surface); color: var(--fg); border: 1px solid var(--line); }
+.btn.small { padding: 9px 14px; font-size: 15px; }
+.btn.wide { width: 100%; }
+.countdown { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 14px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); }
+.countdown span { color: var(--muted); font-size: 14px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.countdown .mono { font-size: 20px; font-weight: 700; }
+.legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.legend div { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 13px; }
+.legend b { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
+
+/* Play */
+.play-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.chip { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.chip.hard { color: var(--danger); border-color: var(--danger); }
+.score-now { font-family: var(--f-display); font-size: 28px; line-height: 1; }
+.score-now small { font-family: var(--f-mono); font-size: 12px; color: var(--muted); margin-left: 4px; }
+.timer { display: flex; align-items: center; gap: 10px; }
+.timer-track { flex: 1; height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.timer-fill { height: 100%; width: 100%; background: var(--fg); border-radius: 99px; transition: background-color .3s; }
+.timer.low .timer-fill { background: var(--danger); }
+.timer .mono { width: 3.2ch; text-align: right; font-weight: 700; }
+.timer.low .mono { color: var(--danger); }
+.prompt-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.prompt-text { font-size: 24px; line-height: 1.3; font-weight: 700; margin: 0; text-wrap: balance; }
+.prompt-meta { font-size: 13px; color: var(--muted); font-family: var(--f-mono); }
+.guess { display: flex; flex-direction: column; gap: 0; }
+.guess input { width: 100%; font-size: 17px; padding: 14px 14px; border-radius: var(--r); border: 1.5px solid var(--line); background: var(--surface); outline: none; }
+.guess input:focus { border-color: var(--fg); }
+.guess.open input { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.sugs { list-style: none; margin: 0; padding: 4px; border: 1.5px solid var(--fg); border-top: 0; border-radius: 0 0 var(--r) var(--r); background: var(--surface); }
+.sugs li { padding: 9px 10px; border-radius: 7px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; cursor: pointer; }
+.sugs li > div { min-width: 0; }
+.sugs li[aria-selected="true"] { background: var(--surface-2); }
+.sugs .en { font-weight: 700; display: block; }
+.sugs .ro { font-size: 13px; color: var(--muted); display: block; }
+.sugs .used { font-family: var(--f-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; flex: none; }
+.sugs li.is-used { cursor: not-allowed; opacity: 0.55; }
+.sugs .none { color: var(--muted); font-size: 14px; cursor: default; }
+.feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.feed li { font-size: 15px; padding: 9px 12px; border-radius: 8px; background: var(--surface); border-left: 3px solid var(--danger); overflow-wrap: anywhere; }
+.feed li.info { border-left-color: var(--muted); color: var(--muted); }
+.resolve { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.resolve-top { display: flex; gap: 14px; align-items: center; }
+.resolve-top .tile { width: 56px; height: 56px; font-size: 24px; border-radius: 10px; }
+.resolve-tier { font-family: var(--f-display); font-size: 26px; line-height: 1.1; }
+.resolve-line { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.examples { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.examples div { display: flex; gap: 8px; align-items: center; }
+.ready { text-align: left; display: flex; flex-direction: column; gap: 12px; }
+
+/* Results */
+.res-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.res-score { font-family: var(--f-display); font-size: 64px; line-height: 0.95; }
+.res-score small { font-family: var(--f-mono); font-size: 16px; color: var(--muted); }
+.res-list { display: flex; flex-direction: column; gap: 10px; }
+.res-item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.res-item .q { font-size: 14px; color: var(--muted); margin: 0; }
+.res-item .a { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.res-item .a .pts { margin-left: auto; font-family: var(--f-mono); }
+.rarest { border-top: 1px dashed var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.rarest .eyebrow { font-size: 11px; }
+.rarest div { display: flex; justify-content: space-between; gap: 10px; }
+.rarest div span:last-child { color: var(--muted); font-family: var(--f-mono); font-size: 12px; flex: none; }
+.share-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.share-row .btn { flex: 1; min-width: 140px; }
+.share-preview { font-family: var(--f-mono); font-size: 14px; white-space: pre; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; margin: 0; overflow-x: auto; }
+.toast { font-size: 14px; color: var(--ok); min-height: 1.5em; margin: 0; }
+.share-fallback { width: 100%; font-family: var(--f-mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px; color: var(--fg); }
+
+/* Stats */
+.stat-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.stat-table th, .stat-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: right; }
+.stat-table th:first-child, .stat-table td:first-child { text-align: left; color: var(--muted); font-weight: 500; }
+.stat-table thead th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.stat-table td { font-family: var(--f-mono); font-size: 17px; }
+.stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.stat-box b { font-family: var(--f-display); font-size: 32px; line-height: 1.1; font-weight: 400; }
+.stat-box .t { font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: 0.01em; }
+h3 { font-size: 15px; margin: 0; }
+.danger-zone { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.btn.danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
+
+/* Help */
+.rules { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 60ch; }
+.tier-table-wrap { overflow-x: auto; }
+.tier-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tier-table th, .tier-table td { padding: 9px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.tier-table thead th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.tier-table td.pts { font-family: var(--f-mono); }
+.example-line { font-family: var(--f-mono); font-size: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: nowrap; }
+.tools { border: 1px dashed var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.tools .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tools input { padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-family: var(--f-mono); }
+
+/* Archive */
+.arch-list { display: flex; flex-direction: column; gap: 8px; }
+.arch-item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.arch-item .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.arch-item .info strong { font-family: var(--f-mono); }
+.arch-item .info span { color: var(--muted); font-size: 14px; }
+
+footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+footer p { margin: 0; max-width: 60ch; }
+
+@media (max-width: 420px) {
+  .big-num, .res-score { font-size: 52px; }
+  .prompt-text { font-size: 21px; }
+  .tile { width: 36px; height: 36px; font-size: 16px; }
+  .legend { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@keyframes pop { from { transform: scale(0.7); } to { transform: scale(1); } }
+.resolve-top .tile { animation: pop .25s ease-out; }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <button class="wordmark" id="go-home" aria-label="Arcle home">
+      <span class="mark" aria-hidden="true"><i class="tc-common"></i><i class="tc-rare"></i><i class="tc-epic"></i><i class="tc-legendary"></i></span>
+      <b>Arcle</b>
+    </button>
+    <nav class="nav">
+      <button class="icon-btn" data-go="archive" aria-label="Archive" title="Archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+      <button class="icon-btn" data-go="stats" aria-label="Stats" title="Stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"/></svg></button>
+      <button class="icon-btn" data-go="help" aria-label="How to play" title="How to play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6V14M12 17.5v.01"/></svg></button>
+      <button class="icon-btn" id="theme-btn" aria-label="Switch to light mode" title="Light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="test-banner" id="test-banner" hidden><span id="test-banner-text"></span><button id="test-clear-banner">Back to today</button></div>
+
+    <section id="scr-home"></section>
+    <section id="scr-play" hidden>
+      <div class="play-head">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="eyebrow" id="p-num">Prompt 1 / 5</span>
+          <span class="chip" id="p-mode">Easy</span>
+        </div>
+        <div class="score-now" id="p-score">0<small>pts</small></div>
+      </div>
+      <div class="tiles" id="p-tiles" aria-label="Progress"></div>
+      <div id="p-ready" class="ready" hidden></div>
+      <div id="p-live">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="timer" id="p-timer"><div class="timer-track"><div class="timer-fill" id="p-timer-fill"></div></div><span class="mono" id="p-timer-num">30</span></div>
+          <div class="prompt-card"><span class="eyebrow">Find the hidden anime</span><div class="clues" id="p-text"></div><span class="prompt-meta" id="p-meta"></span></div>
+          <div id="p-input-area">
+            <div class="guess" id="p-guess">
+              <label for="guess-input" class="eyebrow" style="margin-bottom:6px">Your guess · one shot</label>
+              <input id="guess-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type a title, e.g. Ping Pong or JJK" role="combobox" aria-expanded="false" aria-controls="sug-list" aria-autocomplete="list">
+              <ul class="sugs" id="sug-list" role="listbox" hidden></ul>
+            </div>
+          </div>
+          <div class="resolve" id="p-resolve" hidden></div>
+          <ul class="feed" id="p-feed" aria-live="polite"></ul>
+        </div>
+      </div>
+    </section>
+    <section id="scr-results" hidden></section>
+    <section id="scr-stats" hidden></section>
+    <section id="scr-help" hidden></section>
+    <section id="scr-archive" hidden></section>
+  </main>
+
+  <footer>
+    <p>Arcle prototype. The list holds <span id="f-count"></span> hand-picked anime. Popularity figures are approximate AniList member counts, entered by hand, not live data. They set how well known each day's hidden anime are. New puzzle every day at 00:00 UTC.</p>
+  </footer>
+</div>
+
+<script>
+// Arcle prototype dataset. Popularity = approximate AniList member count, in thousands.
+// Row: [english, romaji, shortNames ("|" separated), year, season, format, source, studios, genres, episodes, popularityK, origin?]
+// Seasons: W Sp Su F. Sources: M manga, LN light novel, O original, VN visual novel, N novel, G video game, X other. origin "WN" = began as a web novel.
+const RAW = [
+["Attack on Titan","Shingeki no Kyojin","AOT|SNK",2013,"Sp","TV","M","Wit Studio","Action|Drama|Fantasy|Mystery",25,930],
+["Your Name.","Kimi no Na wa.","Your Name|Kimi no Na wa",2016,"Su","Movie","O","CoMix Wave Films","Drama|Romance|Supernatural",1,860],
+["Demon Slayer: Kimetsu no Yaiba","Kimetsu no Yaiba","KNY|Demon Slayer",2019,"Sp","TV","M","ufotable","Action|Adventure|Drama|Fantasy|Supernatural",26,840],
+["Death Note","Death Note","DN",2006,"F","TV","M","Madhouse","Mystery|Psychological|Supernatural|Thriller",37,820],
+["Fullmetal Alchemist: Brotherhood","Hagane no Renkinjutsushi: Fullmetal Alchemist","FMAB|FMA",2009,"Sp","TV","M","Bones","Action|Adventure|Drama|Fantasy",64,800],
+["Jujutsu Kaisen","Jujutsu Kaisen","JJK",2020,"F","TV","M","MAPPA","Action|Supernatural",24,780],
+["My Hero Academia","Boku no Hero Academia","MHA|BNHA",2016,"Sp","TV","M","Bones","Action|Comedy",13,770],
+["Spirited Away","Sen to Chihiro no Kamikakushi","",2001,"Su","Movie","O","Studio Ghibli","Adventure|Drama|Fantasy|Supernatural",1,750],
+["One Punch Man","One Punch Man","OPM",2015,"F","TV","M","Madhouse","Action|Comedy|Sci-Fi|Supernatural",12,725],
+["A Silent Voice","Koe no Katachi","Koe no Katachi",2016,"Su","Movie","M","Kyoto Animation","Drama|Romance|Slice of Life",1,715],
+["Sword Art Online","Sword Art Online","SAO",2012,"Su","TV","LN","A-1 Pictures","Action|Adventure|Fantasy|Romance",25,680],
+["Hunter x Hunter (2011)","Hunter x Hunter (2011)","HxH",2011,"F","TV","M","Madhouse","Action|Adventure|Fantasy",148,655],
+["Tokyo Ghoul","Tokyo Ghoul","TG",2014,"Su","TV","M","Studio Pierrot","Action|Drama|Horror|Mystery|Psychological|Supernatural",12,640],
+["Naruto","Naruto","",2002,"F","TV","M","Studio Pierrot","Action|Adventure|Comedy|Fantasy",220,620],
+["Chainsaw Man","Chainsaw Man","CSM",2022,"F","TV","M","MAPPA","Action|Horror|Supernatural",12,605],
+["One Piece","One Piece","OP",1999,"F","TV","M","Toei Animation","Action|Adventure|Comedy|Fantasy",1100,600],
+["Haikyu!!","Haikyuu!!","HQ",2014,"Sp","TV","M","Production I.G","Comedy|Drama|Sports",25,598],
+["Howl's Moving Castle","Howl no Ugoku Shiro","Howl",2004,"F","Movie","N","Studio Ghibli","Adventure|Drama|Fantasy|Romance",1,594],
+["Cowboy Bebop","Cowboy Bebop","",1998,"Sp","TV","O","Sunrise","Action|Adventure|Drama|Sci-Fi",26,580],
+["Steins;Gate","Steins;Gate","Steins Gate",2011,"Sp","TV","VN","White Fox","Drama|Psychological|Sci-Fi|Thriller",24,572],
+["Code Geass: Lelouch of the Rebellion","Code Geass: Hangyaku no Lelouch","Code Geass",2006,"F","TV","O","Sunrise","Action|Drama|Mecha|Sci-Fi|Thriller",25,566],
+["Re:Zero - Starting Life in Another World","Re:Zero kara Hajimeru Isekai Seikatsu","Re:Zero|ReZero",2016,"Sp","TV","LN","White Fox","Action|Drama|Fantasy|Psychological|Thriller",25,563,"WN"],
+["Naruto Shippuden","Naruto: Shippuuden","Shippuden",2007,"W","TV","M","Studio Pierrot","Action|Adventure|Comedy|Drama|Fantasy",500,560],
+["Your Lie in April","Shigatsu wa Kimi no Uso","YLIA",2014,"F","TV","M","A-1 Pictures","Drama|Music|Romance",22,558],
+["Erased","Boku dake ga Inai Machi","BokuMachi",2016,"W","TV","M","A-1 Pictures","Mystery|Psychological|Supernatural|Thriller",12,556],
+["Mob Psycho 100","Mob Psycho 100","MP100",2016,"Su","TV","M","Bones","Action|Comedy|Slice of Life|Supernatural",12,553],
+["Violet Evergarden","Violet Evergarden","VE",2018,"W","TV","LN","Kyoto Animation","Drama|Fantasy|Slice of Life",13,551],
+["Neon Genesis Evangelion","Shinseiki Evangelion","NGE|Eva|Evangelion",1995,"F","TV","O","Gainax|Tatsunoko Production","Action|Drama|Mecha|Psychological|Sci-Fi",26,548],
+["Spy x Family","Spy x Family","SxF|Spy Family",2022,"Sp","TV","M","Wit Studio|CloverWorks","Action|Comedy|Slice of Life",12,545],
+["Princess Mononoke","Mononoke Hime","",1997,"Su","Movie","O","Studio Ghibli","Action|Adventure|Fantasy",1,541],
+["Kaguya-sama: Love Is War","Kaguya-sama wa Kokurasetai","Kaguya-sama|Kaguya",2019,"W","TV","M","A-1 Pictures","Comedy|Psychological|Romance",12,522],
+["The Promised Neverland","Yakusoku no Neverland","TPN",2019,"W","TV","M","CloverWorks","Fantasy|Horror|Mystery|Psychological|Thriller",12,519],
+["No Game No Life","No Game No Life","NGNL",2014,"Sp","TV","LN","Madhouse","Adventure|Comedy|Ecchi|Fantasy",12,516],
+["My Neighbor Totoro","Tonari no Totoro","Totoro",1988,"Sp","Movie","O","Studio Ghibli","Adventure|Comedy|Fantasy|Slice of Life|Supernatural",1,512],
+["KonoSuba: God's Blessing on This Wonderful World!","Kono Subarashii Sekai ni Shukufuku wo!","KonoSuba",2016,"W","TV","LN","Studio Deen","Adventure|Comedy|Fantasy",10,508,"WN"],
+["Frieren: Beyond Journey's End","Sousou no Frieren","Frieren",2023,"F","TV","M","Madhouse","Adventure|Drama|Fantasy",28,486],
+["Parasyte -the maxim-","Kiseijuu: Sei no Kakuritsu","Parasyte",2014,"F","TV","M","Madhouse","Action|Horror|Psychological|Sci-Fi",24,481],
+["Noragami","Noragami","",2014,"W","TV","M","Bones","Action|Comedy|Supernatural",12,477],
+["Toradora!","Toradora!","",2008,"F","TV","LN","J.C.Staff","Comedy|Drama|Romance|Slice of Life",25,474],
+["Bleach","Bleach","",2004,"F","TV","M","Studio Pierrot","Action|Adventure|Supernatural",366,470],
+["The Rising of the Shield Hero","Tate no Yuusha no Nariagari","Shield Hero",2019,"W","TV","LN","Kinema Citrus","Action|Adventure|Drama|Fantasy",25,467,"WN"],
+["Overlord","Overlord","",2015,"Su","TV","LN","Madhouse","Action|Adventure|Fantasy",13,465,"WN"],
+["Weathering With You","Tenki no Ko","",2019,"Su","Movie","O","CoMix Wave Films","Drama|Fantasy|Romance",1,462],
+["Demon Slayer: Mugen Train","Kimetsu no Yaiba Movie: Mugen Ressha-hen","Mugen Train",2020,"F","Movie","M","ufotable","Action|Adventure|Drama|Fantasy|Supernatural",1,458],
+["Akame ga Kill!","Akame ga Kill!","",2014,"Su","TV","M","White Fox","Action|Adventure|Drama|Fantasy",24,455],
+["Assassination Classroom","Ansatsu Kyoushitsu","",2015,"W","TV","M","Lerche","Action|Comedy",22,452],
+["Made in Abyss","Made in Abyss","MIA",2017,"Su","TV","M","Kinema Citrus","Adventure|Drama|Fantasy|Mystery|Sci-Fi",13,449],
+["Gurren Lagann","Tengen Toppa Gurren Lagann","TTGL",2007,"Sp","TV","O","Gainax","Action|Adventure|Comedy|Mecha|Sci-Fi",27,446],
+["Tokyo Revengers","Tokyo Revengers","",2021,"Sp","TV","M","LIDENFILMS","Action|Drama|Supernatural",24,443],
+["That Time I Got Reincarnated as a Slime","Tensei shitara Slime Datta Ken","Slime|Tensura",2018,"F","TV","LN","8bit","Action|Adventure|Comedy|Fantasy",24,440,"WN"],
+["Rascal Does Not Dream of Bunny Girl Senpai","Seishun Buta Yarou wa Bunny Girl Senpai no Yume wo Minai","Bunny Girl Senpai|Aobuta",2018,"F","TV","LN","CloverWorks","Comedy|Drama|Romance|Supernatural",13,437],
+["Vinland Saga","Vinland Saga","",2019,"Su","TV","M","Wit Studio","Action|Adventure|Drama",24,434],
+["Devilman Crybaby","Devilman: Crybaby","",2018,"W","ONA","M","Science SARU","Action|Drama|Horror|Psychological|Supernatural",10,431],
+["Solo Leveling","Ore dake Level Up na Ken","",2024,"W","TV","M","A-1 Pictures","Action|Adventure|Fantasy",12,428],
+["JoJo's Bizarre Adventure","JoJo no Kimyou na Bouken","JoJo|JJBA",2012,"F","TV","M","David Production","Action|Adventure|Supernatural",26,425],
+["Dr. Stone","Dr. Stone","",2019,"Su","TV","M","TMS Entertainment","Adventure|Comedy|Sci-Fi",24,418],
+["Angel Beats!","Angel Beats!","",2010,"Sp","TV","O","P.A.Works","Action|Comedy|Drama|Supernatural",13,415],
+["Darling in the Franxx","Darling in the Franxx","DitF|Franxx",2018,"W","TV","O","Trigger|A-1 Pictures","Action|Drama|Mecha|Romance|Sci-Fi",24,412],
+["Psycho-Pass","Psycho-Pass","",2012,"F","TV","O","Production I.G","Action|Psychological|Sci-Fi|Thriller",22,402],
+["Kill la Kill","Kill la Kill","KLK",2013,"F","TV","O","Trigger","Action|Comedy|Ecchi",24,398],
+["Kuroko's Basketball","Kuroko no Basket","KnB",2012,"Sp","TV","M","Production I.G","Comedy|Sports",25,396],
+["Puella Magi Madoka Magica","Mahou Shoujo Madoka Magica","Madoka|PMMM",2011,"W","TV","O","Shaft","Drama|Mahou Shoujo|Psychological|Thriller",12,394],
+["Soul Eater","Soul Eater","",2008,"Sp","TV","M","Bones","Action|Comedy|Supernatural",51,391],
+["Another","Another","",2012,"W","TV","N","P.A.Works","Horror|Mystery|Supernatural|Thriller",12,388],
+["Akira","Akira","",1988,"Su","Movie","M","TMS Entertainment","Action|Psychological|Sci-Fi",1,385],
+["Mushoku Tensei: Jobless Reincarnation","Mushoku Tensei: Isekai Ittara Honki Dasu","Mushoku Tensei",2021,"W","TV","LN","Studio Bind","Adventure|Drama|Ecchi|Fantasy",11,382,"WN"],
+["Dragon Ball Z","Dragon Ball Z","DBZ",1989,"Sp","TV","M","Toei Animation","Action|Adventure|Comedy|Fantasy",291,380],
+["Kiki's Delivery Service","Majo no Takkyuubin","",1989,"Su","Movie","N","Studio Ghibli","Adventure|Comedy|Drama|Fantasy|Slice of Life",1,375],
+["Anohana: The Flower We Saw That Day","Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.","AnoHana",2011,"Sp","TV","O","A-1 Pictures","Drama|Slice of Life|Supernatural",11,372],
+["Cyberpunk: Edgerunners","Cyberpunk: Edgerunners","Edgerunners",2022,"Su","ONA","G","Trigger","Action|Psychological|Sci-Fi",10,370],
+["Clannad","Clannad","",2007,"F","TV","VN","Kyoto Animation","Drama|Romance|Slice of Life|Supernatural",23,366],
+["Miss Kobayashi's Dragon Maid","Kobayashi-san Chi no Maid Dragon","Dragon Maid",2017,"W","TV","M","Kyoto Animation","Comedy|Fantasy|Slice of Life",13,361],
+["Fate/Zero","Fate/Zero","",2011,"F","TV","LN","ufotable","Action|Fantasy|Supernatural",13,355],
+["Castle in the Sky","Tenkuu no Shiro Laputa","Laputa",1986,"Su","Movie","O","Studio Ghibli","Action|Adventure|Fantasy|Sci-Fi",1,342],
+["Bocchi the Rock!","Bocchi the Rock!","Bocchi",2022,"F","TV","M","CloverWorks","Comedy|Music|Slice of Life",12,348],
+["Death Parade","Death Parade","",2015,"W","TV","O","Madhouse","Drama|Mystery|Psychological|Supernatural|Thriller",12,333],
+["Bungo Stray Dogs","Bungou Stray Dogs","BSD",2016,"Sp","TV","M","Bones","Action|Comedy|Mystery|Supernatural",12,330],
+["Yuri!!! on Ice","Yuri!!! on Ice","YOI",2016,"F","TV","O","MAPPA","Comedy|Drama|Sports",12,327],
+["Fate/stay night: Unlimited Blade Works","Fate/stay night: Unlimited Blade Works","UBW",2014,"F","TV","VN","ufotable","Action|Fantasy|Romance|Supernatural",13,325],
+["Grave of the Fireflies","Hotaru no Haka","",1988,"Sp","Movie","N","Studio Ghibli","Drama",1,322],
+["Bakemonogatari","Bakemonogatari","Monogatari",2009,"Su","TV","LN","Shaft","Comedy|Mystery|Romance|Supernatural",15,318],
+["5 Centimeters per Second","Byousoku 5 Centimeter","5cm",2007,"W","Movie","O","CoMix Wave Films","Drama|Romance|Slice of Life",1,316],
+["Hyouka","Hyouka","",2012,"Sp","TV","N","Kyoto Animation","Mystery|Romance|Slice of Life",22,312],
+["K-On!","K-On!","",2009,"Sp","TV","M","Kyoto Animation","Comedy|Music|Slice of Life",13,310],
+["The Garden of Words","Kotonoha no Niwa","",2013,"Sp","Movie","O","CoMix Wave Films","Drama|Romance|Slice of Life",1,308],
+["Fruits Basket (2019)","Fruits Basket (2019)","Furuba",2019,"Sp","TV","M","TMS Entertainment","Comedy|Drama|Romance|Slice of Life|Supernatural",25,306],
+["Oshi no Ko","[Oshi no Ko]","OnK",2023,"Sp","TV","M","Doga Kobo","Drama|Mystery|Psychological|Supernatural",11,304],
+["Ouran High School Host Club","Ouran Koukou Host Club","Ouran",2006,"Sp","TV","M","Bones","Comedy|Romance",26,302],
+["Samurai Champloo","Samurai Champloo","",2004,"Sp","TV","O","Manglobe","Action|Adventure|Comedy",26,298],
+["Monster","Monster","",2004,"Sp","TV","M","Madhouse","Drama|Mystery|Psychological|Thriller",74,296],
+["Dungeon Meshi","Dungeon Meshi","Delicious in Dungeon",2024,"W","TV","M","Trigger","Adventure|Comedy|Fantasy",24,292],
+["Dandadan","Dandadan","",2024,"F","TV","M","Science SARU","Action|Comedy|Romance|Sci-Fi|Supernatural",12,288],
+["The Ancient Magus' Bride","Mahoutsukai no Yome","",2017,"F","TV","M","Wit Studio","Drama|Fantasy|Romance|Slice of Life",24,286],
+["The Disastrous Life of Saiki K.","Saiki Kusuo no Psi-nan","Saiki K|Saiki",2016,"Su","TV","M","J.C.Staff|Egg Firm","Comedy|Slice of Life|Supernatural",120,280],
+["Kabaneri of the Iron Fortress","Koutetsujou no Kabaneri","Kabaneri",2016,"Sp","TV","O","Wit Studio","Action|Drama|Horror|Sci-Fi",12,276],
+["Love, Chunibyo & Other Delusions","Chuunibyou demo Koi ga Shitai!","Chunibyo",2012,"F","TV","LN","Kyoto Animation","Comedy|Drama|Romance|Slice of Life",12,274],
+["Hellsing Ultimate","Hellsing Ultimate","",2006,"W","OVA","M","Satelight|Madhouse","Action|Horror|Supernatural",10,264],
+["FLCL","Fooly Cooly","Fooly Cooly",2000,"Sp","OVA","O","Gainax|Production I.G","Action|Comedy|Mecha|Sci-Fi",6,262],
+["Banana Fish","Banana Fish","",2018,"Su","TV","M","MAPPA","Action|Drama|Thriller",24,260],
+["The Apothecary Diaries","Kusuriya no Hitorigoto","Kusuriya",2023,"F","TV","LN","OLM","Drama|Mystery",24,258,"WN"],
+["Gintama","Gintama","",2006,"Sp","TV","M","Sunrise","Action|Comedy|Drama|Sci-Fi",201,256],
+["The Melancholy of Haruhi Suzumiya","Suzumiya Haruhi no Yuuutsu","Haruhi",2006,"Sp","TV","LN","Kyoto Animation","Comedy|Mystery|Sci-Fi|Slice of Life|Supernatural",14,252],
+["Ponyo","Gake no Ue no Ponyo","",2008,"Su","Movie","O","Studio Ghibli","Adventure|Comedy|Fantasy",1,250],
+["Dororo","Dororo","",2019,"W","TV","M","MAPPA|Tezuka Productions","Action|Adventure|Supernatural",24,248],
+["Whisper of the Heart","Mimi wo Sumaseba","",1995,"Su","Movie","M","Studio Ghibli","Drama|Romance|Slice of Life",1,242],
+["Danganronpa: The Animation","Danganronpa: Kibou no Gakuen to Zetsubou no Koukousei The Animation","Danganronpa",2013,"Su","TV","G","Lerche","Horror|Mystery|Psychological",13,238],
+["The Girl Who Leapt Through Time","Toki wo Kakeru Shoujo","",2006,"Su","Movie","N","Madhouse","Drama|Romance|Sci-Fi",1,234],
+["Porco Rosso","Kurenai no Buta","",1992,"Su","Movie","M","Studio Ghibli","Adventure|Comedy|Drama|Romance",1,232],
+["Ranking of Kings","Ousama Ranking","",2021,"F","TV","M","Wit Studio","Adventure|Drama|Fantasy",23,230],
+["Terror in Resonance","Zankyou no Terror","",2014,"Su","TV","O","MAPPA","Mystery|Psychological|Thriller",11,228],
+["Black Lagoon","Black Lagoon","",2006,"Sp","TV","M","Madhouse","Action",12,226],
+["Log Horizon","Log Horizon","",2013,"F","TV","LN","Satelight","Action|Adventure|Fantasy",25,220,"WN"],
+["Nichijou","Nichijou","",2011,"Sp","TV","M","Kyoto Animation","Comedy|Slice of Life",26,219],
+["Barakamon","Barakamon","",2014,"Su","TV","M","Kinema Citrus","Comedy|Slice of Life",12,218],
+["Higurashi: When They Cry","Higurashi no Naku Koro ni","Higurashi",2006,"Sp","TV","VN","Studio Deen","Horror|Mystery|Psychological|Supernatural|Thriller",26,216],
+["March Comes in Like a Lion","3-gatsu no Lion","3-gatsu no Lion",2016,"F","TV","M","Shaft","Drama|Slice of Life",22,214],
+["Perfect Blue","Perfect Blue","",1998,"W","Movie","N","Madhouse","Drama|Horror|Psychological|Thriller",1,212],
+["Laid-Back Camp","Yuru Camp","Yuru Camp",2018,"W","TV","M","C-Station","Comedy|Slice of Life",12,210],
+["Ghost in the Shell","Koukaku Kidoutai","GITS",1995,"F","Movie","M","Production I.G","Action|Mecha|Psychological|Sci-Fi",1,208],
+["Wolf Children","Ookami Kodomo no Ame to Yuki","",2012,"Su","Movie","O","Studio Chizu|Madhouse","Drama|Fantasy|Slice of Life",1,206],
+["The Secret World of Arrietty","Karigurashi no Arrietty","Arrietty",2010,"Su","Movie","N","Studio Ghibli","Adventure|Fantasy|Slice of Life",1,204],
+["Ping Pong the Animation","Ping Pong the Animation","Ping Pong",2014,"Sp","TV","M","Tatsunoko Production","Drama|Psychological|Sports",11,200],
+["Hajime no Ippo","Hajime no Ippo","Ippo",2000,"F","TV","M","Madhouse","Comedy|Drama|Sports",75,198],
+["Little Witch Academia","Little Witch Academia","LWA",2017,"W","TV","O","Trigger","Adventure|Comedy|Fantasy|Mahou Shoujo",25,196],
+["Mushishi","Mushishi","",2005,"F","TV","M","Artland","Adventure|Mystery|Slice of Life|Supernatural",26,194],
+["A Place Further Than the Universe","Sora yori mo Tooi Basho","Yorimoi",2018,"W","TV","O","Madhouse","Adventure|Comedy|Drama|Slice of Life",13,190],
+["Yu Yu Hakusho","Yuu Yuu Hakusho","YYH",1992,"F","TV","M","Studio Pierrot","Action|Adventure|Comedy|Drama|Supernatural",112,180],
+["Welcome to the NHK","NHK ni Youkoso!","NHK",2006,"Su","TV","N","Gonzo","Comedy|Drama|Psychological|Romance",24,178],
+["Great Teacher Onizuka","Great Teacher Onizuka","GTO",1999,"Su","TV","M","Studio Pierrot","Comedy|Drama|Slice of Life",43,172],
+["Haven't You Heard? I'm Sakamoto","Sakamoto desu ga?","Sakamoto desu ga",2016,"Sp","TV","M","Studio Deen","Comedy",12,170],
+["Keep Your Hands Off Eizouken!","Eizouken ni wa Te wo Dasu na!","Eizouken",2020,"W","TV","M","Science SARU","Adventure|Comedy",12,168],
+["Heavenly Delusion","Tengoku Daimakyou","",2023,"Sp","TV","M","Production I.G","Adventure|Mystery|Sci-Fi",13,166],
+["The Tatami Galaxy","Yojouhan Shinwa Taikei","",2010,"Sp","TV","N","Madhouse","Comedy|Mystery|Psychological|Romance",11,164],
+["Serial Experiments Lain","Serial Experiments Lain","Lain",1998,"Su","TV","O","Triangle Staff","Drama|Mystery|Psychological|Sci-Fi|Supernatural",13,158],
+["Paprika","Paprika","",2006,"F","Movie","N","Madhouse","Mystery|Psychological|Sci-Fi",1,156],
+["Berserk (1997)","Kenpuu Denki Berserk","Berserk",1997,"F","TV","M","OLM","Action|Adventure|Drama|Fantasy|Horror",25,152],
+["Blue Lock","Blue Lock","",2022,"F","TV","M","8bit","Sports",24,296],
+["When Marnie Was There","Omoide no Marnie","",2014,"Su","Movie","N","Studio Ghibli","Drama|Mystery|Supernatural",1,150],
+["Darker than Black","Darker than Black: Kuro no Keiyakusha","DTB",2007,"Sp","TV","O","Bones","Action|Mystery|Sci-Fi|Supernatural",25,148],
+["Summer Wars","Summer Wars","",2009,"Su","Movie","O","Madhouse","Comedy|Drama|Sci-Fi",1,146],
+["Trigun","Trigun","",1998,"Sp","TV","M","Madhouse","Action|Adventure|Comedy|Sci-Fi",26,144],
+["Cardcaptor Sakura","Cardcaptor Sakura","CCS",1998,"Sp","TV","M","Madhouse","Comedy|Mahou Shoujo|Romance",70,142],
+["Sailor Moon","Bishoujo Senshi Sailor Moon","",1992,"W","TV","M","Toei Animation","Comedy|Drama|Mahou Shoujo|Romance",46,139],
+["Ascendance of a Bookworm","Honzuki no Gekokujou","Bookworm",2019,"F","TV","LN","Ajia-do","Fantasy|Slice of Life",14,136,"WN"],
+["Rurouni Kenshin","Rurouni Kenshin: Meiji Kenkaku Romantan","Kenshin",1996,"W","TV","M","Studio Gallop|Studio Deen","Action|Adventure|Comedy|Drama|Romance",94,134],
+["Ya Boy Kongming!","Paripi Koumei","Paripi Koumei|Kongming",2022,"Sp","TV","M","P.A.Works","Comedy|Music",12,130],
+["Chihayafuru","Chihayafuru","",2011,"F","TV","M","Madhouse","Drama|Slice of Life|Sports",25,122],
+["Megalo Box","Megalo Box","",2018,"Sp","TV","O","TMS Entertainment","Action|Drama|Sci-Fi|Sports",13,118],
+["Sound! Euphonium","Hibike! Euphonium","Eupho",2015,"Sp","TV","N","Kyoto Animation","Drama|Music|Slice of Life",13,115],
+["Nana","Nana","",2006,"Sp","TV","M","Madhouse","Drama|Music|Romance|Slice of Life",47,114],
+["Kids on the Slope","Sakamichi no Apollon","",2012,"Sp","TV","M","MAPPA|Tezuka Productions","Drama|Music|Romance",12,110],
+["The Boy and the Heron","Kimitachi wa Dou Ikiru ka","",2023,"Su","Movie","O","Studio Ghibli","Adventure|Drama|Fantasy",1,109],
+["Odd Taxi","Odd Taxi","",2021,"Sp","TV","O","OLM|P.I.C.S.","Drama|Mystery|Psychological",13,108],
+["Tokyo Godfathers","Tokyo Godfathers","",2003,"F","Movie","O","Madhouse","Comedy|Drama",1,105],
+["Ghost in the Shell: Stand Alone Complex","Koukaku Kidoutai: Stand Alone Complex","GITS SAC",2002,"F","TV","M","Production I.G","Action|Mecha|Mystery|Sci-Fi",26,104],
+["Tsukimichi: Moonlit Fantasy","Tsuki ga Michibiku Isekai Douchuu","Tsukimichi",2021,"Su","TV","LN","C2C","Action|Adventure|Comedy|Fantasy",12,103,"WN"],
+["Maquia: When the Promised Flower Blooms","Sayonara no Asa ni Yakusoku no Hana wo Kazarou","Maquia",2018,"W","Movie","O","P.A.Works","Drama|Fantasy",1,102],
+["Mobile Suit Gundam: The Witch from Mercury","Kidou Senshi Gundam: Suisei no Majo","Witch from Mercury|G-Witch",2022,"F","TV","O","Sunrise","Action|Drama|Mecha|Sci-Fi",12,101],
+["Shirobako","Shirobako","",2014,"F","TV","O","P.A.Works","Comedy|Drama|Slice of Life",24,100],
+["Full Metal Panic!","Full Metal Panic!","FMP",2002,"W","TV","LN","Gonzo","Action|Comedy|Mecha|Romance|Sci-Fi",24,99],
+["The Tale of the Princess Kaguya","Kaguya-hime no Monogatari","",2013,"F","Movie","X","Studio Ghibli","Drama|Fantasy",1,98],
+["Detective Conan","Meitantei Conan","Case Closed|Conan",1996,"W","TV","M","TMS Entertainment","Adventure|Comedy|Mystery",1100,95],
+["Initial D First Stage","Initial D First Stage","Initial D",1998,"Sp","TV","M","Pastel","Action|Drama|Sports",26,93],
+["Mononoke","Mononoke","",2007,"Su","TV","O","Toei Animation","Horror|Mystery|Psychological|Supernatural",12,92],
+["Kaiji: Ultimate Survivor","Gyakkyou Burai Kaiji: Ultimate Survivor","Kaiji",2007,"F","TV","M","Madhouse","Psychological|Thriller",26,90],
+["Legend of the Galactic Heroes","Ginga Eiyuu Densetsu","LOGH",1988,"W","OVA","N","Artland|K-Factory","Drama|Sci-Fi",110,87],
+["Kanon (2006)","Kanon","Kanon",2006,"F","TV","VN","Kyoto Animation","Drama|Romance|Slice of Life|Supernatural",24,85],
+["Digimon Adventure","Digimon Adventure","Digimon",1999,"Sp","TV","O","Toei Animation","Action|Adventure|Comedy|Fantasy",54,84],
+["Rurouni Kenshin: Trust & Betrayal","Rurouni Kenshin: Tsuiokuhen","Trust and Betrayal",1999,"W","OVA","M","Studio Deen","Action|Drama|Romance",4,83],
+["Slam Dunk","Slam Dunk","",1993,"F","TV","M","Toei Animation","Comedy|Drama|Sports",101,78],
+["Paranoia Agent","Mousou Dairinin","",2004,"W","TV","O","Madhouse","Drama|Horror|Mystery|Psychological|Thriller",13,75],
+["Lupin III: The Castle of Cagliostro","Lupin III: Cagliostro no Shiro","Cagliostro",1979,"F","Movie","M","TMS Entertainment","Action|Adventure|Comedy",1,73],
+["Pluto","Pluto","",2023,"F","ONA","M","Studio M2","Drama|Mystery|Psychological|Sci-Fi",8,71],
+["Only Yesterday","Omoide Poroporo","",1991,"Su","Movie","M","Studio Ghibli","Drama|Romance|Slice of Life",1,70],
+["Haibane Renmei","Haibane Renmei","",2002,"F","TV","O","Radix","Drama|Fantasy|Mystery|Slice of Life",13,69],
+["Flying Witch","Flying Witch","",2016,"Sp","TV","M","J.C.Staff","Comedy|Slice of Life|Supernatural",12,66],
+["Revolutionary Girl Utena","Shoujo Kakumei Utena","Utena",1997,"Sp","TV","O","J.C.Staff","Drama|Mahou Shoujo|Psychological|Romance",39,65],
+["Ranma 1/2","Ranma 1/2","Ranma",1989,"Sp","TV","M","Studio Deen","Action|Comedy|Romance",161,60],
+["Mobile Suit Gundam","Kidou Senshi Gundam","Gundam 0079",1979,"Sp","TV","O","Sunrise","Action|Drama|Mecha|Sci-Fi",43,58],
+["Planetes","Planetes","",2003,"F","TV","M","Sunrise","Drama|Romance|Sci-Fi",26,57],
+["Liz and the Blue Bird","Liz to Aoi Tori","",2018,"Sp","Movie","N","Kyoto Animation","Drama|Music|Slice of Life",1,50],
+["Scott Pilgrim Takes Off","Scott Pilgrim Takes Off","",2023,"F","ONA","X","Science SARU","Action|Comedy|Romance",8,49],
+["Fist of the North Star","Hokuto no Ken","",1984,"F","TV","M","Toei Animation","Action|Drama|Sci-Fi",109,47],
+["The Vision of Escaflowne","Tenkuu no Escaflowne","Escaflowne",1996,"Sp","TV","O","Sunrise","Action|Adventure|Fantasy|Mecha|Romance",26,46],
+["Eureka Seven","Koukyoushihen Eureka Seven","",2005,"Sp","TV","O","Bones","Adventure|Drama|Mecha|Romance|Sci-Fi",50,45],
+["Now and Then, Here and There","Ima, Soko ni Iru Boku","",1999,"F","TV","O","AIC","Adventure|Drama|Fantasy|Sci-Fi",13,42],
+["Joker Game","Joker Game","",2016,"Sp","TV","N","Production I.G","Mystery|Thriller",12,41],
+["Gankutsuou: The Count of Monte Cristo","Gankutsuou","Gankutsuou",2004,"F","TV","N","Gonzo","Drama|Mystery|Sci-Fi|Thriller",24,36],
+["Ace Attorney","Gyakuten Saiban","",2016,"Sp","TV","G","A-1 Pictures","Comedy|Mystery",24,31],
+["Kuromukuro","Kuromukuro","",2016,"Sp","TV","O","P.A.Works","Action|Mecha|Sci-Fi",26,26],
+["Lupin III Part 1","Lupin Sansei","Lupin III",1971,"F","TV","M","TMS Entertainment","Action|Adventure|Comedy|Mystery",23,24],
+["Mobile Suit Gundam 0080: War in the Pocket","Kidou Senshi Gundam 0080: Pocket no Naka no Sensou","Gundam 0080",1989,"Sp","OVA","O","Sunrise","Drama|Mecha|Sci-Fi",6,21],
+["Patlabor: The Movie","Kidou Keisatsu Patlabor: The Movie","Patlabor",1989,"Su","Movie","O","Production I.G|Studio Deen","Action|Mecha|Sci-Fi",1,20],
+["Maison Ikkoku","Maison Ikkoku","",1986,"Sp","TV","M","Studio Deen","Comedy|Drama|Romance|Slice of Life",96,19],
+["Nausicaa of the Valley of the Wind","Kaze no Tani no Nausicaa","Nausicaa",1984,"Sp","Movie","M","Topcraft","Adventure|Fantasy|Sci-Fi",1,190],
+["Pom Poko","Heisei Tanuki Gassen Ponpoko","",1994,"Su","Movie","O","Studio Ghibli","Comedy|Drama|Fantasy|Supernatural",1,80],
+["The Wind Rises","Kaze Tachinu","",2013,"Su","Movie","M","Studio Ghibli","Drama|Romance",1,200],
+["Suzume","Suzume no Tojimari","",2022,"F","Movie","O","CoMix Wave Films","Adventure|Drama|Fantasy",1,226],
+["The First Slam Dunk","The First Slam Dunk","",2022,"F","Movie","M","Toei Animation","Drama|Sports",1,66],
+["Promare","Promare","",2019,"Sp","Movie","O","Trigger","Action|Mecha|Sci-Fi",1,128],
+["The Night Is Short, Walk On Girl","Yoru wa Mijikashi Arukeyo Otome","",2017,"Sp","Movie","N","Science SARU","Comedy|Romance",1,86],
+["Astro Boy","Tetsuwan Atom","Tetsuwan Atom",1963,"W","TV","M","Mushi Production","Action|Sci-Fi",193,10],
+["Galaxy Express 999","Ginga Tetsudou 999","GE999",1978,"F","TV","M","Toei Animation","Adventure|Drama|Sci-Fi",113,18],
+["Space Battleship Yamato","Uchuu Senkan Yamato","Yamato",1974,"F","TV","O","Academy Productions","Action|Drama|Sci-Fi",26,15],
+["The Rose of Versailles","Versailles no Bara","Versailles no Bara",1979,"F","TV","M","TMS Entertainment","Drama|Romance",40,30],
+["Super Dimension Fortress Macross","Choujikuu Yousai Macross","Macross",1982,"F","TV","O","Tatsunoko Production|Artland","Action|Mecha|Music|Romance|Sci-Fi",36,29],
+["Record of Lodoss War","Lodoss-tou Senki","Lodoss",1990,"Su","OVA","N","Madhouse","Adventure|Fantasy",13,26],
+["Vampire Hunter D","Vampire Hunter D","",1985,"F","Movie","N","Ashi Productions","Action|Horror|Sci-Fi|Supernatural",1,31],
+["A Certain Scientific Railgun","Toaru Kagaku no Railgun","Railgun",2009,"F","TV","M","J.C.Staff","Action|Sci-Fi",24,244],
+["Free!","Free!","",2013,"Su","TV","LN","Kyoto Animation","Comedy|Slice of Life|Sports",12,170],
+["Zombie Land Saga","Zombieland Saga","",2018,"F","TV","O","MAPPA","Comedy|Music|Supernatural",12,168],
+["Dorohedoro","Dorohedoro","",2020,"W","TV","M","MAPPA","Action|Comedy|Fantasy|Horror",12,232],
+["Great Pretender","Great Pretender","",2020,"Su","TV","O","Wit Studio","Adventure|Comedy|Mystery",23,118],
+["86 EIGHTY-SIX","86","86",2021,"Sp","TV","LN","A-1 Pictures","Action|Drama|Mecha|Sci-Fi",11,230],
+["Kimba the White Lion","Jungle Taitei","Jungle Taitei",1965,"F","TV","M","Mushi Production","Adventure|Drama",52,5],
+["Heidi, Girl of the Alps","Alps no Shoujo Heidi","Heidi",1974,"W","TV","N","Zuiyo Eizo","Drama|Slice of Life",52,15],
+];
+if (typeof module !== "undefined") module.exports = RAW;
+
+// Arcle puzzle engine: each prompt hides one mystery anime. Players get one guess, scored by how close it is.
+function createEngine(RAW) {
+  const SEASONS = { W: "Winter", Sp: "Spring", Su: "Summer", F: "Fall" };
+  const SOURCES = { M: "Manga", LN: "Light Novel", O: "Original", VN: "Visual Novel", N: "Novel", G: "Video Game", X: "Other" };
+  const EPOCH = "2026-10-19";
+  const DAY_MS = 86400000;
+  const NO_REPEAT_DAYS = 30;
+
+  const ANIME = RAW.map((r, i) => ({
+    id: i + 1,
+    english: r[0],
+    romaji: r[1],
+    short: r[2] ? r[2].split("|") : [],
+    year: r[3],
+    season: SEASONS[r[4]],
+    format: r[5],
+    source: SOURCES[r[6]],
+    origin: r[11] === "WN" ? "Web Novel" : null,
+    studios: r[7].split("|"),
+    genres: r[8].split("|"),
+    episodes: r[9],
+    popularity: r[10] * 1000,
+  }));
+  const BY_ID = new Map(ANIME.map(a => [a.id, a]));
+  const byPop = ANIME.slice().sort((a, b) => b.popularity - a.popularity || a.id - b.id);
+  const RANK = new Map(byPop.map((a, i) => [a.id, i + 1]));
+
+  // Slot difficulty: which popularity ranks the mystery comes from, how many clues Easy mode shows,
+  // and how many anime in the list may fit all Easy clues (fewer = easier to hit exactly).
+  const SLOTS = [
+    { ranks: [1, 65], clues: 4, fit: [2, 5] },
+    { ranks: [15, 100], clues: 4, fit: [3, 7] },
+    { ranks: [20, 130], clues: 4, fit: [4, 8] },
+    { ranks: [40, 170], clues: 3, fit: [5, 11] },
+    { ranks: [70, 999], clues: 3, fit: [6, 14] },
+  ];
+
+  // ---------- Clues ----------
+  const EP_RANGES = [[2, 13], [14, 26], [27, 60], [61, 99999]];
+  const SOURCE_CHIP = { "Manga": "From a manga", "Light Novel": "From a light novel", "Original": "Original story",
+    "Visual Novel": "From a visual novel", "Novel": "From a novel", "Video Game": "From a video game", "Other": "Other source" };
+  const FORMAT_CHIP = { TV: "TV series", Movie: "Film", OVA: "OVA", ONA: "ONA (web release)" };
+  const decadeOf = a => Math.floor(a.year / 10) * 10;
+  const epRangeOf = a => a.format === "Movie" ? null : EP_RANGES.find(([lo, hi]) => a.episodes >= lo && a.episodes <= hi);
+  const epChip = ([lo, hi]) => hi > 9999 ? `${lo}+ episodes` : `${lo}–${hi} episodes`;
+
+  function cluesFor(a) {
+    const out = [];
+    for (const g of a.genres) if (g !== "Ecchi") out.push({ key: "g:" + g, type: "genre", chip: g, test: x => x.genres.includes(g) });
+    out.push({ key: "s:" + a.source, type: "source", chip: SOURCE_CHIP[a.source], test: x => x.source === a.source });
+    if (a.origin) out.push({ key: "wn", type: "source", chip: "Began as a web novel", test: x => x.origin === "Web Novel" });
+    out.push({ key: "st:" + a.studios[0], type: "studio", chip: "Studio: " + a.studios[0], test: x => x.studios.includes(a.studios[0]) });
+    const d = decadeOf(a);
+    out.push({ key: "d:" + d, type: "decade", chip: d + "s", test: x => decadeOf(x) === d });
+    if (a.format !== "TV") out.push({ key: "f:" + a.format, type: "format", chip: FORMAT_CHIP[a.format], test: x => x.format === a.format });
+    const er = epRangeOf(a);
+    if (er) out.push({ key: "e:" + er[0], type: "eps", chip: epChip(er), test: x => { const r = epRangeOf(x); return !!r && r[0] === er[0]; } });
+    return out;
+  }
+  const fitting = clues => ANIME.filter(x => clues.every(c => c.test(x)));
+
+  // ---------- Closeness scoring ----------
+  const TIERS = {
+    bullseye: { name: "Bullseye", pts: 100, sq: "🌟", min: 100 },
+    close: { name: "Close", sq: "🟪", min: 60 },
+    warm: { name: "Warm", sq: "🟦", min: 35 },
+    cold: { name: "Cold", sq: "⬜", min: 0 },
+    miss: { name: "Miss", pts: 0, sq: "⬛" },
+  };
+  const tierFor = score => score >= 100 ? "bullseye" : score >= 60 ? "close" : score >= 35 ? "warm" : "cold";
+
+  function compare(guess, target) {
+    const rows = [];
+    // Year: 20, minus 4 per year apart.
+    const dy = target.year - guess.year;
+    rows.push({ attr: "Year", guess: String(guess.year), target: String(target.year), max: 20,
+      pts: Math.max(0, 20 - 4 * Math.abs(dy)), hint: dy > 0 ? "↑ newer" : dy < 0 ? "↓ older" : "" });
+    // Genres: 20 × shared / combined.
+    const gSet = new Set(guess.genres), shared = target.genres.filter(g => gSet.has(g));
+    const union = new Set([...guess.genres, ...target.genres]).size;
+    rows.push({ attr: "Genres", guess: guess.genres.join(", "), target: target.genres.join(", "), max: 20,
+      pts: Math.round(20 * shared.length / union), hint: `${shared.length} shared` });
+    // Episodes: 15, by ratio. Films only match films.
+    let ep = 0, epHint = "";
+    if (guess.format === "Movie" || target.format === "Movie") ep = guess.format === target.format ? 15 : 0;
+    else {
+      const r = Math.min(guess.episodes, target.episodes) / Math.max(guess.episodes, target.episodes);
+      ep = Math.round(15 * Math.pow(r, 0.7));
+      epHint = target.episodes > guess.episodes ? "↑ more" : target.episodes < guess.episodes ? "↓ fewer" : "";
+    }
+    const epText = a => a.format === "Movie" ? "Film" : String(a.episodes);
+    rows.push({ attr: "Episodes", guess: epText(guess), target: epText(target), max: 15, pts: ep, hint: epHint });
+    const sharesStudio = guess.studios.some(s => target.studios.includes(s));
+    rows.push({ attr: "Studio", guess: guess.studios.join(", "), target: target.studios.join(", "), max: 15, pts: sharesStudio ? 15 : 0, hint: "" });
+    rows.push({ attr: "Source", guess: guess.source, target: target.source, max: 10, pts: guess.source === target.source ? 10 : 0, hint: "" });
+    rows.push({ attr: "Format", guess: FORMAT_CHIP[guess.format], target: FORMAT_CHIP[target.format], max: 10, pts: guess.format === target.format ? 10 : 0, hint: "" });
+    const exact = guess.id === target.id;
+    const score = exact ? 100 : Math.min(90, rows.reduce((s, r) => s + r.pts, 0));
+    return { exact, score, tier: tierFor(score), rows };
+  }
+
+  // ---------- Dates & RNG ----------
+  const parseDate = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  const fmtDate = ms => new Date(ms).toISOString().slice(0, 10);
+  const EPOCH_MS = parseDate(EPOCH);
+  const puzzleNumber = dateStr => Math.round((parseDate(dateStr) - EPOCH_MS) / DAY_MS) + 1;
+  const dateForNumber = n => fmtDate(EPOCH_MS + (n - 1) * DAY_MS);
+  function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function shuffle(arr, rng) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  // Pick a clue set for a mystery: Easy shows all of them, Hard drops the last one.
+  // A set is accepted if the number of anime fitting all Easy clues is inside the slot's range,
+  // and no single clue type appears twice except genres.
+  function pickClues(a, slot, rng) {
+    const all = cluesFor(a);
+    for (let tries = 0; tries < 120; tries++) {
+      const set = [];
+      const types = new Set();
+      for (const c of shuffle(all, rng)) {
+        if (c.type !== "genre" && types.has(c.type)) continue;
+        if (c.type === "genre" && set.filter(x => x.type === "genre").length >= 2) continue;
+        set.push(c); types.add(c.type);
+        if (set.length === slot.clues) break;
+      }
+      if (set.length < slot.clues) continue;
+      const fit = fitting(set).length;
+      if (fit < slot.fit[0] || fit > slot.fit[1]) continue;
+      // Order clues broadest first. Hard mode drops the last one, which is the most telling clue.
+      set.sort((x, y) => fitting([x]).length - fitting([y]).length).reverse();
+      const fitHard = fitting(set.slice(0, -1)).length;
+      if (fitHard <= fit || fitHard > slot.fit[1] * 4) continue;
+      return { clues: set, fitEasy: fit, fitHard };
+    }
+    return null;
+  }
+
+  const dayCache = [];
+  const lastUsed = new Map();
+  let fallbacks = 0;
+  function generateDay(n) {
+    const rng = mulberry32(hashStr("arcle-closest-" + dateForNumber(n)));
+    const prompts = [];
+    SLOTS.forEach((slot, s) => {
+      const pool = byPop.filter(a => {
+        const rk = RANK.get(a.id);
+        return rk >= slot.ranks[0] && rk <= slot.ranks[1] && !prompts.some(p => p.mysteryId === a.id);
+      });
+      const fresh = pool.filter(a => !lastUsed.has(a.id) || n - lastUsed.get(a.id) >= NO_REPEAT_DAYS);
+      let made = null;
+      for (const a of shuffle(fresh, rng)) {
+        const c = pickClues(a, slot, rng);
+        if (c) { made = { mysteryId: a.id, ...c }; break; }
+      }
+      if (!made) {
+        fallbacks++;
+        for (const a of shuffle(pool, rng)) { const c = pickClues(a, slot, rng); if (c) { made = { mysteryId: a.id, ...c }; break; } }
+      }
+      prompts.push(made);
+    });
+    prompts.forEach(p => lastUsed.set(p.mysteryId, n));
+    return prompts;
+  }
+  function getDay(dateStr) {
+    const n = puzzleNumber(dateStr);
+    if (n < 1) return null;
+    while (dayCache.length < n) dayCache.push(generateDay(dayCache.length + 1));
+    return { number: n, date: dateStr, prompts: dayCache[n - 1] };
+  }
+  const cluesForMode = (p, mode) => mode === "hard" ? p.clues.slice(0, -1) : p.clues;
+
+  return { ANIME, BY_ID, RANK, TIERS, SLOTS, EPOCH, NO_REPEAT_DAYS, getDay, compare, tierFor, cluesForMode, fitting,
+    puzzleNumber, dateForNumber, parseDate, fmtDate, get fallbacks() { return fallbacks; } };
+}
+if (typeof module !== "undefined") module.exports = createEngine;
+
+(function () {
+"use strict";
+const E = createEngine(RAW);
+const DAY_MS = 86400000;
+const PROMPT_MS = 30000;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TIER_KEYS = ["cold", "warm", "close", "bullseye"];
+const TILE_GLYPH = { cold: "", warm: "", close: "", bullseye: "★", miss: "✕" };
+const TIER_RANGE = { bullseye: "100", close: "60–90", warm: "35–59", cold: "0–34", miss: "0" };
+
+// ---------- Storage (all access wrapped so the page works without it) ----------
+const KEY = "arcle:v2";
+const blankMode = () => ({ played: 0, total: 0, cur: 0, best: 0, last: null });
+const fresh = () => ({ v: 2, days: {}, archive: {}, stats: { easy: blankMode(), hard: blankMode(), bullseyes: 0, hardest: null }, theme: null, mode: "easy", testDate: null });
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 2) return Object.assign(fresh(), s); } catch (e) {}
+  return fresh();
+}
+let S = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+// ---------- Dates ----------
+const utcToday = () => new Date().toISOString().slice(0, 10);
+function urlTestDate() {
+  let d = null;
+  try { d = new URLSearchParams(location.search).get("date"); } catch (e) {}
+  if (!d) { const m = (location.hash || "").match(/^#date-(\d{4}-\d{2}-\d{2})$/); if (m) d = m[1]; }
+  return d && /^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(E.parseDate(d)) ? d : null;
+}
+const URL_DATE = urlTestDate();
+const testDate = () => URL_DATE || S.testDate || null;
+const today = () => testDate() || utcToday();
+const addDays = (d, n) => E.fmtDate(E.parseDate(d) + n * DAY_MS);
+const niceDate = d => new Date(E.parseDate(d)).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const shortDate = d => new Date(E.parseDate(d)).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+function msToNextReset() { const now = Date.now(); return Math.ceil((now + 1) / DAY_MS) * DAY_MS - now; }
+function hms(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(n => String(n).padStart(2, "0")).join(":"); }
+const fmtPop = p => p >= 1e6 ? (p / 1e6).toFixed(1) + "M" : Math.round(p / 1000) + "k";
+
+// ---------- Theme ----------
+function applyTheme() {
+  const t = S.theme || "dark";
+  document.documentElement.dataset.theme = t;
+  $("theme-btn").setAttribute("aria-label", t === "dark" ? "Switch to light mode" : "Switch to dark mode");
+}
+$("theme-btn").addEventListener("click", () => { S.theme = (S.theme || "dark") === "dark" ? "light" : "dark"; save(); applyTheme(); });
+
+// ---------- Screens ----------
+const SCREENS = ["home", "play", "results", "stats", "help", "archive"];
+let screen = "home";
+let homeTimer = null;
+function show(name) {
+  screen = name;
+  for (const s of SCREENS) $("scr-" + s).hidden = s !== name;
+  document.querySelectorAll("[data-go]").forEach(b => { if (b.dataset.go === name) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  if (name !== "play") stopTimer();
+  clearInterval(homeTimer);
+  window.scrollTo(0, 0);
+}
+function go(name) {
+  if (name === "home") renderHome();
+  if (name === "stats") renderStats();
+  if (name === "help") renderHelp();
+  if (name === "archive") renderArchive();
+}
+$("go-home").addEventListener("click", () => go("home"));
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+
+function renderBanner() {
+  const t = testDate();
+  $("test-banner").hidden = !t;
+  if (t) {
+    $("test-banner-text").textContent = `Test date: ${t} (puzzle #${E.puzzleNumber(t)})`;
+    $("test-clear-banner").hidden = !!URL_DATE && !S.testDate;
+  }
+}
+$("test-clear-banner").addEventListener("click", () => {
+  S.testDate = null; save();
+  if (URL_DATE) { try { location.hash = ""; location.search = ""; } catch (e) {} }
+  renderBanner(); go("home");
+});
+
+// ---------- Records ----------
+const newRec = mode => ({ mode, results: [], guesses: [[], [], [], [], []], current: null, done: false, counted: false });
+const recScore = rec => rec.results.reduce((s, r) => s + (r ? r.pts : 0), 0);
+function streakNow(mode) {
+  const m = S.stats[mode], t = today();
+  return m.last === t || m.last === addDays(t, -1) ? m.cur : 0;
+}
+
+// ---------- Tiles ----------
+function tileHTML(r, small) {
+  const cls = small ? "tile sm" : "tile";
+  if (!r) return `<span class="${cls} empty"></span>`;
+  return `<span class="${cls} tc-${r.tier}" title="${E.TIERS[r.tier].name}">${TILE_GLYPH[r.tier]}</span>`;
+}
+const tilesHTML = (rec, small, nowIdx) => [0, 1, 2, 3, 4].map(i => {
+  const h = tileHTML(rec.results[i], small);
+  return i === nowIdx && !rec.results[i] ? h.replace("empty", "empty now") : h;
+}).join("");
+
+// ---------- Home ----------
+function renderHome() {
+  show("home");
+  renderBanner();
+  const t = today();
+  const n = E.puzzleNumber(t);
+  const el = $("scr-home");
+  if (n < 1) {
+    el.innerHTML = `
+      <div class="hero">
+        <span class="eyebrow">Daily anime guessing game</span>
+        <div class="big-num">#1</div>
+        <p class="lede">The first Arcle puzzle goes live on ${niceDate(E.EPOCH)} at 00:00 UTC.</p>
+      </div>
+      <div class="countdown"><span>Puzzle #1 starts in</span><b class="mono" id="cd">${hms(E.parseDate(E.EPOCH) - Date.now())}</b></div>
+      <button class="btn ghost wide" id="preview-btn">Preview puzzle #1 (doesn't count)</button>
+      ${legendHTML()}`;
+    $("preview-btn").addEventListener("click", () => startGame(E.EPOCH, "archive", S.mode || "easy"));
+    homeTimer = setInterval(() => { const ms = E.parseDate(E.EPOCH) - Date.now(); if (ms <= 0 && !testDate()) renderHome(); else $("cd").textContent = hms(ms); }, 1000);
+    return;
+  }
+  const rec = S.days[t];
+  const started = rec && (rec.results.length || rec.current);
+  const mode = rec ? rec.mode : (S.mode || "easy");
+  const locked = !!rec;
+  let action;
+  if (rec && rec.done) {
+    action = `<div class="countdown"><span>Today: ${recScore(rec)} / 500</span><span class="tiles">${tilesHTML(rec, true)}</span></div>
+      <button class="btn wide" id="act">See today's results</button>`;
+  } else if (started) {
+    action = `<button class="btn wide" id="act">Continue: prompt ${Math.min(rec.results.length + 1, 5)} of 5</button>`;
+  } else {
+    action = `<button class="btn wide" id="act">Play #${n}</button>`;
+  }
+  el.innerHTML = `
+    <div class="hero">
+      <span class="eyebrow">${niceDate(t)}</span>
+      <div class="big-num"><span>#</span>${n}</div>
+      <p class="lede">Five hidden anime to find. One guess each, thirty seconds per guess. The closer your guess, the more it scores.</p>
+    </div>
+    <div class="modes" role="group" aria-label="Mode">
+      <button class="mode" data-mode="easy" aria-pressed="${mode === "easy"}" ${locked ? "disabled" : ""}><strong>Easy</strong><small>See every clue.</small></button>
+      <button class="mode" data-mode="hard" aria-pressed="${mode === "hard"}" ${locked ? "disabled" : ""}><strong>Hard</strong><small>One clue fewer per prompt.</small></button>
+    </div>
+    ${locked ? `<p class="note">Today is locked to ${mode === "hard" ? "Hard" : "Easy"} mode.</p>` : ""}
+    ${action}
+    <div class="countdown"><span>Next puzzle in</span><b class="mono" id="cd">${hms(msToNextReset())}</b></div>
+    ${legendHTML()}`;
+  el.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+    S.mode = b.dataset.mode; save();
+    el.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  $("act").addEventListener("click", () => {
+    if (rec && rec.done) showResults(t, "daily");
+    else startGame(t, "daily", S.mode || "easy");
+  });
+  const startDay = utcToday();
+  homeTimer = setInterval(() => {
+    if (!testDate() && utcToday() !== startDay) return renderHome();
+    const c = $("cd"); if (c) c.textContent = hms(msToNextReset());
+  }, 1000);
+}
+function legendHTML() {
+  return `<div class="legend" aria-label="Tiers">${TIER_KEYS.map(k => `<div>${tileHTML({ tier: k }, true)}<span>${E.TIERS[k].name}</span><b>${TIER_RANGE[k]}</b></div>`).join("")}</div>`;
+}
+
+// ---------- Game ----------
+let G = null; // { date, kind, rec, day }
+let timerId = null;
+
+function startGame(date, kind, mode) {
+  const day = E.getDay(date);
+  if (!day) return;
+  const store = kind === "daily" ? S.days : S.archive;
+  if (!store[date]) store[date] = newRec(mode);
+  if (kind === "archive" && store[date].done) store[date] = newRec(mode);
+  save();
+  G = { date, kind, rec: store[date], day };
+  if (G.rec.done) return showResults(date, kind);
+  show("play");
+  renderPlay();
+}
+
+function curIdx() { return Math.min(G.rec.results.length, 4); }
+
+function renderPlay() {
+  const rec = G.rec;
+  const i = rec.results.length;
+  $("p-mode").textContent = rec.mode === "hard" ? "Hard" : "Easy";
+  $("p-mode").className = "chip" + (rec.mode === "hard" ? " hard" : "");
+  $("p-score").innerHTML = `${recScore(rec)}<small>pts</small>`;
+  $("p-tiles").innerHTML = tilesHTML(rec, false, i);
+  if (i >= 5) return finishGame();
+  $("p-num").textContent = `Prompt ${i + 1} / 5` + (G.kind === "archive" ? ` · Archive #${G.day.number}` : "");
+  if (!rec.current || rec.current.idx !== i) {
+    // Prompt not shown yet. On a fresh start show it right away; after a reload, wait for a tap.
+    if (G.resume) {
+      $("p-ready").hidden = false; $("p-live").hidden = true;
+      $("p-ready").innerHTML = `<h2>Prompt ${i + 1} is ready</h2><p class="note">The 30-second timer starts when the prompt appears.</p><button class="btn wide" id="ready-btn">Show prompt ${i + 1}</button>`;
+      $("ready-btn").addEventListener("click", () => { G.resume = false; renderPlay(); });
+      return;
+    }
+    rec.current = { idx: i, startedAt: Date.now() };
+    save();
+  }
+  G.resume = false;
+  $("p-ready").hidden = true; $("p-live").hidden = false;
+  const p = G.day.prompts[i];
+  const clues = E.cluesForMode(p, rec.mode);
+  $("p-text").innerHTML = clues.map(c => `<span class="clue">${esc(c.chip)}</span>`).join("");
+  $("p-meta").textContent = `${E.fitting(clues).length} anime in the Arcle list fit these clues`;
+  $("p-resolve").hidden = true;
+  $("p-input-area").hidden = false;
+  $("guess-input").value = "";
+  closeSugs();
+  renderFeed();
+  startTimer();
+  setTimeout(() => $("guess-input").focus({ preventScroll: true }), 30);
+}
+
+function renderFeed() {
+  const i = G.rec.results.length;
+  const lines = (G.rec.guesses[Math.min(i, 4)] || []).slice().reverse();
+  $("p-feed").innerHTML = lines.map(g => `<li class="${g.info ? "info" : ""}">${esc(g.text)}</li>`).join("");
+}
+
+function startTimer() {
+  stopTimer();
+  const tick = () => {
+    const cur = G && G.rec.current;
+    if (!cur) return stopTimer();
+    const left = PROMPT_MS - (Date.now() - cur.startedAt);
+    const frac = Math.max(0, left / PROMPT_MS);
+    $("p-timer-fill").style.width = (frac * 100) + "%";
+    $("p-timer-num").textContent = Math.max(0, Math.ceil(left / 1000));
+    $("p-timer").classList.toggle("low", left < 10000);
+    if (left <= 0) { stopTimer(); resolveMiss(); }
+  };
+  tick();
+  timerId = setInterval(tick, 100);
+}
+function stopTimer() { clearInterval(timerId); timerId = null; }
+
+function submitGuess(anime) {
+  const rec = G.rec, i = rec.results.length;
+  if (!rec.current || rec.current.idx !== i || i >= 5) return;
+  if (Date.now() - rec.current.startedAt >= PROMPT_MS) { stopTimer(); return resolveMiss(); }
+  const p = G.day.prompts[i];
+  const cmp = E.compare(anime, E.BY_ID.get(p.mysteryId));
+  const line = `${anime.english} — ${E.TIERS[cmp.tier].name.toUpperCase()} ${E.TIERS[cmp.tier].sq} +${cmp.score}`;
+  rec.results[i] = { id: anime.id, tier: cmp.tier, pts: cmp.score, line };
+  rec.current = null;
+  save();
+  stopTimer();
+  showResolution(i);
+}
+
+function resolveMiss() {
+  const rec = G.rec, i = rec.results.length;
+  if (i >= 5 || !rec.current) return;
+  rec.results[i] = { id: null, tier: "miss", pts: 0 };
+  rec.current = null;
+  save();
+  showResolution(i);
+}
+
+function showResolution(i) {
+  const r = G.rec.results[i], p = G.day.prompts[i];
+  $("p-input-area").hidden = true; closeSugs();
+  $("p-score").innerHTML = `${recScore(G.rec)}<small>pts</small>`;
+  $("p-tiles").innerHTML = tilesHTML(G.rec, false, -1);
+  $("p-timer-fill").style.width = "0%";
+  const last = i === 4;
+  const mystery = E.BY_ID.get(p.mysteryId);
+  let body;
+  if (r.tier === "miss") {
+    body = `<div class="resolve-top">${tileHTML(r)}<div><div class="resolve-tier txt-miss">Miss</div><span class="note">Time ran out · +0</span></div></div>
+      <p class="reveal">The answer was <b>${esc(mystery.english)}</b>.</p>`;
+  } else {
+    const guess = E.BY_ID.get(r.id);
+    body = `<div class="resolve-top">${tileHTML(r)}<div><div class="resolve-tier txt-${r.tier}">${E.TIERS[r.tier].name}</div><span class="note">+${r.pts} points</span></div></div>
+      <p class="resolve-line">${esc(r.line)}</p>
+      ${r.tier === "bullseye" ? `<p class="reveal">You found it: <b>${esc(mystery.english)}</b>.</p>` : `<p class="reveal">The answer was <b>${esc(mystery.english)}</b>.</p>${cmpTable(guess, mystery)}`}`;
+  }
+  $("p-resolve").innerHTML = body + `<button class="btn wide" id="next-btn">${last ? "See results" : `Next prompt (${i + 2}/5)`}</button>`;
+  $("p-resolve").hidden = false;
+  $("p-feed").innerHTML = "";
+  $("next-btn").addEventListener("click", () => renderPlay());
+  $("next-btn").focus({ preventScroll: true });
+}
+
+function cmpTable(guess, mystery) {
+  const cmp = E.compare(guess, mystery);
+  return `<div class="cmp-wrap"><table class="cmp"><thead><tr><th></th><th>Your guess</th><th>Answer</th><th>Pts</th></tr></thead><tbody>${cmp.rows.map(row => {
+    const cls = row.pts === row.max ? "full" : row.pts > 0 ? "part" : "none";
+    return `<tr class="${cls}"><td>${row.attr}</td><td>${esc(row.guess)}</td><td>${esc(row.target)}${row.hint ? ` <span class="hint">${esc(row.hint)}</span>` : ""}</td><td class="mono">${row.pts}/${row.max}</td></tr>`;
+  }).join("")}</tbody></table></div>`;
+}
+
+function finishGame() {
+  const rec = G.rec;
+  if (!rec.done) {
+    rec.done = true;
+    if (G.kind === "daily" && !rec.counted) {
+      rec.counted = true;
+      const m = S.stats[rec.mode];
+      m.played++; m.total += recScore(rec);
+      m.cur = m.last === addDays(G.date, -1) ? m.cur + 1 : 1;
+      m.last = G.date;
+      m.best = Math.max(m.best, m.cur);
+      rec.results.forEach((r, i) => {
+        if (r.tier !== "bullseye") return;
+        S.stats.bullseyes++;
+        const id = G.day.prompts[i].mysteryId, rank = E.RANK.get(id);
+        if (!S.stats.hardest || rank > S.stats.hardest.rank) S.stats.hardest = { id, rank, date: G.date };
+      });
+    }
+    save();
+  }
+  showResults(G.date, G.kind);
+}
+
+// ---------- Autocomplete ----------
+const norm = s => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const INDEX = E.ANIME.map(a => {
+  const keys = [a.english, a.romaji, ...a.short].map(norm).filter(Boolean);
+  return { a, keys, compact: keys.map(k => k.replace(/ /g, "")) };
+});
+function suggest(q) {
+  const nq = norm(q); if (!nq) return [];
+  const cq = nq.replace(/ /g, "");
+  const out = [];
+  for (const it of INDEX) {
+    let best = 9;
+    it.keys.forEach((k, j) => {
+      const kc = it.compact[j];
+      let s = 9;
+      if (k === nq || kc === cq) s = 0;
+      else if (kc.startsWith(cq)) s = 1;
+      else if ((" " + k).includes(" " + nq)) s = 2;
+      else if (cq.length >= 3 && kc.includes(cq)) s = 3;
+      if (s < best) best = s;
+    });
+    if (best < 9) out.push({ a: it.a, s: best });
+  }
+  out.sort((x, y) => x.s - y.s || y.a.popularity - x.a.popularity);
+  return out.slice(0, 7).map(x => x.a);
+}
+let sugs = [], sel = 0;
+function renderSugs() {
+  const list = $("sug-list"), input = $("guess-input");
+  const q = input.value.trim();
+  if (!q) return closeSugs();
+  list.hidden = false; $("p-guess").classList.add("open"); input.setAttribute("aria-expanded", "true");
+  if (!sugs.length) { list.innerHTML = `<li class="none">No match in the Arcle list. Try another spelling or the romaji title.</li>`; return; }
+  list.innerHTML = sugs.map((a, j) => {
+    const ro = a.romaji !== a.english ? `<span class="ro">${esc(a.romaji)}</span>` : "";
+    return `<li role="option" id="sug-${j}" data-j="${j}" aria-selected="${j === sel}"><div><span class="en">${esc(a.english)}</span>${ro}</div></li>`;
+  }).join("");
+  input.setAttribute("aria-activedescendant", "sug-" + sel);
+}
+function closeSugs() {
+  sugs = []; sel = 0;
+  $("sug-list").hidden = true; $("sug-list").innerHTML = "";
+  $("p-guess").classList.remove("open");
+  $("guess-input").setAttribute("aria-expanded", "false");
+}
+function pick(j) {
+  const a = sugs[j]; if (!a) return;
+  $("guess-input").value = "";
+  closeSugs();
+  submitGuess(a);
+}
+$("guess-input").addEventListener("input", e => { sugs = suggest(e.target.value); sel = 0; renderSugs(); });
+$("guess-input").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" && sugs.length) { sel = (sel + 1) % sugs.length; renderSugs(); e.preventDefault(); }
+  else if (e.key === "ArrowUp" && sugs.length) { sel = (sel - 1 + sugs.length) % sugs.length; renderSugs(); e.preventDefault(); }
+  else if (e.key === "Enter") { e.preventDefault(); if (sugs.length) pick(sel); }
+  else if (e.key === "Escape") closeSugs();
+});
+$("sug-list").addEventListener("mousedown", e => {
+  const li = e.target.closest("li[data-j]"); if (!li) return;
+  e.preventDefault(); pick(+li.dataset.j);
+});
+
+// ---------- Results ----------
+function shareText(rec, day, kind) {
+  const head = `Arcle #${day.number} 🎌${rec.mode === "hard" ? " Hard" : ""}`;
+  const sq = rec.results.map(r => E.TIERS[r.tier].sq).join("");
+  const tail = kind === "daily" ? `${recScore(rec)} pts · streak ${streakNow(rec.mode)}🔥` : `${recScore(rec)} pts · archive`;
+  return `${head}\n${sq}\n${tail}`;
+}
+function showResults(date, kind) {
+  show("results");
+  renderBanner();
+  const rec = (kind === "daily" ? S.days : S.archive)[date];
+  const day = E.getDay(date);
+  const score = recScore(rec);
+  const text = shareText(rec, day, kind);
+  const items = day.prompts.map((p, i) => {
+    const r = rec.results[i];
+    const a = r && r.id ? E.BY_ID.get(r.id) : null;
+    const m = E.BY_ID.get(p.mysteryId);
+    return `<div class="res-item">
+      <p class="q">${i + 1}. ${E.cluesForMode(p, rec.mode).map(c => esc(c.chip)).join(" · ")}</p>
+      <div class="a">${tileHTML(r, true)}<span>${a ? esc(a.english) : "No guess"}</span><span class="pts txt-${r.tier}">${E.TIERS[r.tier].name} +${r.pts}</span></div>
+      <div class="rarest"><div><span>Answer: <b>${esc(m.english)}</b></span><span>${m.year} · ${esc(m.studios[0])}</span></div></div>
+    </div>`;
+  }).join("");
+  $("scr-results").innerHTML = `
+    <div class="res-head">
+      <div><span class="eyebrow">Arcle #${day.number} · ${rec.mode === "hard" ? "Hard" : "Easy"}${kind === "archive" ? " · Archive" : ""}</span>
+      <div class="res-score">${score}<small> / 500</small></div></div>
+      <div class="tiles">${tilesHTML(rec, false, -1)}</div>
+    </div>
+    ${kind === "archive" ? `<p class="note">Archive games don't count toward streaks or stats.</p>` : ""}
+    <pre class="share-preview" id="share-text">${esc(text)}</pre>
+    <div class="share-row">
+      <button class="btn" id="share-btn">Share result</button>
+      <button class="btn ghost" id="res-home">${kind === "archive" ? "Back to archive" : "Home"}</button>
+    </div>
+    <p class="toast" id="toast" aria-live="polite"></p>
+    <div class="res-list">${items}</div>`;
+  $("share-btn").addEventListener("click", () => copyShare(text));
+  $("res-home").addEventListener("click", () => go(kind === "archive" ? "archive" : "home"));
+}
+function copyShare(text) {
+  const done = () => { $("toast").textContent = "Copied to clipboard."; };
+  const fallback = () => {
+    $("toast").innerHTML = `Copy didn't work here. Select the text below and copy it.<textarea class="share-fallback" id="share-fb" rows="3" readonly></textarea>`;
+    const ta = $("share-fb"); ta.value = text; ta.focus(); ta.select();
+  };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+}
+
+// ---------- Stats ----------
+function renderStats() {
+  show("stats");
+  const st = S.stats;
+  const row = (label, f) => `<tr><td>${label}</td><td>${f(st.easy, "easy")}</td><td>${f(st.hard, "hard")}</td></tr>`;
+  const avg = m => m.played ? Math.round(m.total / m.played) : "–";
+  const hb = st.hardest ? E.BY_ID.get(st.hardest.id) : null;
+  $("scr-stats").innerHTML = `
+    <h2>Stats</h2>
+    <div class="tier-table-wrap"><table class="stat-table">
+      <thead><tr><th></th><th>Easy</th><th>Hard</th></tr></thead>
+      <tbody>
+        ${row("Games played", m => m.played)}
+        ${row("Current streak", (m, k) => streakNow(k))}
+        ${row("Best streak", m => m.best)}
+        ${row("Average score", avg)}
+      </tbody></table></div>
+    <div class="stat-pair">
+      <div class="stat-box"><span class="eyebrow">Bullseyes</span><b class="txt-bullseye">${st.bullseyes}</b></div>
+      <div class="stat-box"><span class="eyebrow">Hardest bullseye</span>${hb ? `<span class="t">${esc(hb.english)}</span><span class="note">~${fmtPop(hb.popularity)} members · #${E.puzzleNumber(st.hardest.date)}</span>` : `<span class="note">Name a hidden anime exactly to set one.</span>`}</div>
+    </div>
+    <p class="note">Only daily puzzles count. Archive games and previews don't change these numbers.</p>
+    <div class="danger-zone" id="reset-zone"><button class="btn small danger" id="reset-btn">Reset all data</button></div>`;
+  $("reset-btn").addEventListener("click", () => {
+    $("reset-zone").innerHTML = `<span class="note">Delete all streaks, stats and saved games on this device?</span>
+      <button class="btn small danger" id="reset-yes">Delete everything</button><button class="btn small ghost" id="reset-no">Keep my data</button>`;
+    $("reset-yes").addEventListener("click", () => { const th = S.theme; S = fresh(); S.theme = th; save(); renderStats(); });
+    $("reset-no").addEventListener("click", renderStats);
+  });
+}
+
+// ---------- How to play ----------
+function renderHelp() {
+  show("help");
+  const rows = [["bullseye", "You named the hidden anime exactly"], ["close", "Very close: shares most details"], ["warm", "Fits the clues, but differs in places"], ["cold", "Far off"], ["miss", "No guess before time ran out"]];
+  $("scr-help").innerHTML = `
+    <h2>How to play</h2>
+    <ol class="rules">
+      <li>Each day has 5 hidden anime to find. Everyone gets the same ones.</li>
+      <li>Each prompt shows a few clues, like genre, studio, decade, source or episode count. No plot details.</li>
+      <li>You get one guess per prompt and 30 seconds to make it. Pick a title from the list and it locks in.</li>
+      <li>A guess scores up to 90 points for how close it is: year (20), genres (20), episodes (15), studio (15), source (10) and format (10). Naming the exact anime scores 100.</li>
+      <li>Prompts get harder through the day: later answers are less well known, and their clues fit more anime.</li>
+      <li>Hard mode shows one clue fewer per prompt. Easy and Hard keep separate streaks. Pick a mode before you start; it stays fixed for the day.</li>
+      <li>A new puzzle arrives at 00:00 UTC. The last 7 days are in the archive, for practice.</li>
+    </ol>
+    <div class="tier-table-wrap"><table class="tier-table">
+      <thead><tr><th>Tier</th><th>Points</th><th>Meaning</th></tr></thead>
+      <tbody>${rows.map(([k, rule]) => `<tr><td><span style="display:flex;gap:8px;align-items:center">${tileHTML({ tier: k }, true)}${E.TIERS[k].name}</span></td><td class="pts">${TIER_RANGE[k]}</td><td>${rule}</td></tr>`).join("")}</tbody>
+    </table></div>
+    <h3>Example</h3>
+    <div class="example-line">Clues: Sports · From a manga · 2010s · 2–13 episodes</div>
+    <div class="example-line">Haikyu!! — WARM 🟦 +52 · The answer was Ping Pong the Animation</div>
+    <div class="tools">
+      <h3>Prototype testing</h3>
+      <p class="note">Load any day's puzzle as if it were today. It counts for stats like a normal day, so reset data after testing. You can also add <span class="mono">?date=2026-10-25</span> to the file's URL, or <span class="mono">#date-2026-10-25</span> to the artifact link.</p>
+      <div class="row"><input type="date" id="test-date" aria-label="Test date" min="${E.EPOCH}" value="${testDate() || ""}"><button class="btn small" id="test-load">Load this date</button><button class="btn small ghost" id="test-clear">Use real date</button></div>
+    </div>`;
+  $("test-load").addEventListener("click", () => {
+    const v = $("test-date").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || E.puzzleNumber(v) < 1) { $("test-date").focus(); return; }
+    S.testDate = v; save(); go("home");
+  });
+  $("test-clear").addEventListener("click", () => { S.testDate = null; save(); go("home"); });
+}
+
+// ---------- Archive ----------
+function renderArchive() {
+  show("archive");
+  const t = today();
+  const days = [];
+  for (let k = 1; k <= 7; k++) { const d = addDays(t, -k); if (E.puzzleNumber(d) >= 1) days.push(d); }
+  const items = days.map(d => {
+    const rec = S.archive[d];
+    const status = rec && rec.done ? `<span class="tiles">${tilesHTML(rec, true)}</span><span>${recScore(rec)} pts · ${rec.mode === "hard" ? "Hard" : "Easy"}</span>`
+      : rec && rec.results.length ? `<span>In progress: ${rec.results.length} / 5</span>` : `<span>Not played</span>`;
+    const label = rec && rec.done ? "View" : rec && rec.results.length ? "Continue" : "Play";
+    return `<div class="arch-item"><div class="info"><strong>#${E.puzzleNumber(d)} · ${shortDate(d)}</strong>${status}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        ${rec && rec.done ? `<button class="btn small ghost" data-replay="${d}">Replay</button>` : ""}
+        <button class="btn small" data-arch="${d}">${label}</button></div></div>`;
+  }).join("");
+  $("scr-archive").innerHTML = `
+    <h2>Archive</h2>
+    <p class="note">Play the last 7 days for practice. Archive games don't count toward streaks or stats.</p>
+    ${days.length ? `<div class="modes" role="group" aria-label="Archive mode">
+      <button class="mode" data-amode="easy" aria-pressed="${(S.mode || "easy") === "easy"}"><strong>Easy</strong><small>See every clue.</small></button>
+      <button class="mode" data-amode="hard" aria-pressed="${S.mode === "hard"}"><strong>Hard</strong><small>One clue fewer per prompt.</small></button></div>
+      <div class="arch-list">${items}</div>`
+    : `<p class="note">Nothing here yet. The archive fills up as days pass after puzzle #1 on ${niceDate(E.EPOCH)}.</p>`}`;
+  $("scr-archive").querySelectorAll("[data-amode]").forEach(b => b.addEventListener("click", () => {
+    S.mode = b.dataset.amode; save();
+    $("scr-archive").querySelectorAll("[data-amode]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  $("scr-archive").querySelectorAll("[data-arch]").forEach(b => b.addEventListener("click", () => {
+    const d = b.dataset.arch, rec = S.archive[d];
+    if (rec && rec.done) return showResults(d, "archive");
+    startGame(d, "archive", S.mode || "easy");
+  }));
+  $("scr-archive").querySelectorAll("[data-replay]").forEach(b => b.addEventListener("click", () => {
+    const d = b.dataset.replay; delete S.archive[d]; save(); startGame(d, "archive", S.mode || "easy");
+  }));
+}
+
+// ---------- Boot ----------
+$("f-count").textContent = E.ANIME.length;
+applyTheme();
+renderBanner();
+(function boot() {
+  const t = today();
+  const rec = S.days[t];
+  if (E.puzzleNumber(t) >= 1 && rec && !rec.done && (rec.results.length || rec.current)) {
+    G = { date: t, kind: "daily", rec, day: E.getDay(t), resume: true };
+    show("play");
+    // A prompt that was already on screen keeps its original start time; the timer is not reset by reloading.
+    if (rec.current && rec.current.idx === rec.results.length) G.resume = false;
+    renderPlay();
+    return;
+  }
+  renderHome();
+})();
+window.__arcle = { E, get S() { return S; }, get G() { return G; } };
+})();
+
+</script>
